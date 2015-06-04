@@ -40,8 +40,14 @@ func (t *Transaction) Select(dest interface{}, query string, args ...interface{}
 	return hookedselect(t.dbmap, t, dest, query, args...)
 }
 
+// SelectOne has the Same behaviour as DbMap.SelectOne(), but runs in a transaction.
 func (t *Transaction) SelectOne(dest interface{}, query string, args ...interface{}) error {
 	return hookedget(t.dbmap, t, dest, query, args...)
+}
+
+// SelectAll has the Same behaviour as DbMap.SelectAll(), but runs in a transaction.
+func (t *Transaction) SelectAll(dest interface{}) error {
+	return getAll(t.dbmap, t, dest)
 }
 
 // Exec has the same behavior as DbMap.Exec(), but runs in a transaction.

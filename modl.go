@@ -119,6 +119,7 @@ type SqlExecutor interface {
 	Delete(list ...interface{}) (int64, error)
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	Select(dest interface{}, query string, args ...interface{}) error
+	SelectAll(dest interface{}) error
 	SelectOne(dest interface{}, query string, args ...interface{}) error
 	handle() handle
 }
@@ -126,8 +127,8 @@ type SqlExecutor interface {
 // Compile-time check that DbMap and Transaction implement the SqlExecutor
 // interface.
 var (
-        _ SqlExecutor = &DbMap{}
-        _ SqlExecutor = &Transaction{}
+	_ SqlExecutor = &DbMap{}
+	_ SqlExecutor = &Transaction{}
 )
 
 ///////////////
@@ -189,7 +190,7 @@ func get(m *DbMap, e SqlExecutor, dest interface{}, keys ...interface{}) error {
 		return &NoKeysErr{table}
 	}
 
-	plan := table.bindGet()
+	plan := table.bindGet(true)
 	err := e.handle().Get(dest, plan.query, keys...)
 
 	if err != nil {
@@ -200,6 +201,41 @@ func get(m *DbMap, e SqlExecutor, dest interface{}, keys ...interface{}) error {
 		err = dest.(PostGetter).PostGet(e)
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func getAll(m *DbMap, e SqlExecutor, dest interface{}) error {
+
+	table := m.TableFor(dest)
+
+	if table == nil {
+		return fmt.Errorf("could not find table for %v", dest)
+	}
+
+	plan := table.bindGet(false)
+	err := e.handle().Select(dest, plan.query)
+
+	if err != nil {
+		return err
+	}
+
+	if table != nil && table.CanPostGet {
+		var x interface{}
+		v := reflect.ValueOf(dest)
+		if v.Kind() == reflect.Ptr {
+			v = reflect.Indirect(v)
+		}
+		l := v.Len()
+		for i := 0; i < l; i++ {
+			x = v.Index(i).Interface()
+			err = x.(PostGetter).PostGet(e)
+			if err != nil {
+				return err
+			}
+
 		}
 	}
 

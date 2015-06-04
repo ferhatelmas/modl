@@ -856,6 +856,35 @@ func TestSelectBehavior(t *testing.T) {
 	if p.FName != "Ben" {
 		t.Errorf("Wrong FName: %s", p.FName)
 	}
+
+}
+
+func TestSelectAll(t *testing.T) {
+	dbm := initDbMap()
+	defer dbm.Cleanup()
+
+	err := dbm.Insert(
+		&Person{0, 0, 0, "jason", "moiron", 0},
+		&Person{0, 0, 0, "ferhat", "elmas", 0},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// select all and ensure postget is called
+	people := []*Person{}
+	err = dbm.SelectAll(&people)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(people) != 2 {
+		t.Errorf("Expected 2 people, but got %d people", len(people))
+	}
+	for _, p := range people {
+		if p.LName != "postget" {
+			t.Errorf("Wrong LName: %s", p.LName)
+		}
+	}
 }
 
 func TestQuoteTableNames(t *testing.T) {

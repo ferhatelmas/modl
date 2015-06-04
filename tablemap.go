@@ -22,6 +22,7 @@ type TableMap struct {
 	updatePlan bindPlan
 	deletePlan bindPlan
 	getPlan    bindPlan
+	getAllPlan bindPlan
 	dbmap      *DbMap
 	mapper     *reflectx.Mapper
 	// Cached capabilities for the struct mapped to this table
@@ -42,6 +43,7 @@ func (t *TableMap) ResetSql() {
 	t.updatePlan = bindPlan{}
 	t.deletePlan = bindPlan{}
 	t.getPlan = bindPlan{}
+	t.getAllPlan = bindPlan{}
 }
 
 // SetKeys lets you specify the fields on a struct that map to primary
@@ -89,8 +91,13 @@ func (t *TableMap) SetVersionCol(field string) *ColumnMap {
 	return c
 }
 
-func (t *TableMap) bindGet() bindPlan {
-	plan := t.getPlan
+func (t *TableMap) bindGet(filterByKey bool) bindPlan {
+	var plan bindPlan
+	if filterByKey {
+		plan = t.getPlan
+	} else {
+		plan = t.getAllPlan
+	}
 	if plan.query == "" {
 
 		s := bytes.Buffer{}
@@ -109,22 +116,28 @@ func (t *TableMap) bindGet() bindPlan {
 		}
 		s.WriteString(" from ")
 		s.WriteString(t.dbmap.Dialect.QuoteField(t.TableName))
-		s.WriteString(" where ")
-		for x := range t.Keys {
-			col := t.Keys[x]
-			if x > 0 {
-				s.WriteString(" and ")
-			}
-			s.WriteString(t.dbmap.Dialect.QuoteField(col.ColumnName))
-			s.WriteString("=")
-			s.WriteString(t.dbmap.Dialect.BindVar(x))
+		if filterByKey {
+			s.WriteString(" where ")
+			for x := range t.Keys {
+				col := t.Keys[x]
+				if x > 0 {
+					s.WriteString(" and ")
+				}
+				s.WriteString(t.dbmap.Dialect.QuoteField(col.ColumnName))
+				s.WriteString("=")
+				s.WriteString(t.dbmap.Dialect.BindVar(x))
 
-			plan.keyFields = append(plan.keyFields, col.fieldName)
+				plan.keyFields = append(plan.keyFields, col.fieldName)
+			}
 		}
 		s.WriteString(";")
 
 		plan.query = s.String()
-		t.getPlan = plan
+		if filterByKey {
+			t.getPlan = plan
+		} else {
+			t.getAllPlan = plan
+		}
 	}
 
 	return plan

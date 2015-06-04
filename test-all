@@ -4,7 +4,7 @@
 #
 #   MODL_MYSQL_DSN - mysql connect DSN, like "modltest/modltest/modltest"
 #   MODL_POSTGRES_DSN - postgres connect DSN, eg:
-#        "username=modltest password=modltest dbname=modltest ssl-mode=disable"
+#        "user=modltest password=modltest host=localhost dbname=modltest port=5432 sslmode=disable"
 #   MODL_SQLITE_DSN - sqlite connect DSN, which is a path to a sqlite file.
 #   MODL_FAIL_ON_SKIP - optional, will fail if any DBs are skipped (for CI, mostly)
 #

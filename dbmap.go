@@ -320,6 +320,12 @@ func (m *DbMap) Get(dest interface{}, keys ...interface{}) error {
 	return get(m, m, dest, keys...)
 }
 
+// SelectAll is a helper to run a SQL SELECT to fetch all rows from the table
+// mostly in Select semantics but struct must be registered beforehand.
+func (m *DbMap) SelectAll(dest interface{}) error {
+	return getAll(m, m, dest)
+}
+
 // Select runs an arbitrary SQL query, binding the columns in the result
 // to fields on the struct specified by dest.  args represent the bind
 // parameters for the SQL statement.
